@@ -148,15 +148,12 @@ def set_post(update: Update, context: CallbackContext):
             # Format content to HTML
             post_content = format_to_html(post_content)
 
-            # Save post content to database
-            posts_collection.update_one(
-                {"_id": ObjectId("some_id")},  # Replace with appropriate logic to fetch the post by ID
-                {"$set": {"content": post_content}},
-                upsert=True
-            )
+            # Save the new post content to the database
+            posts_collection.insert_one({"content": post_content})
             update.message.reply_text("Post has been set!")
         else:
             update.message.reply_text("Usage: /post <content>")
+
 
 def handle_message(update: Update, context: CallbackContext):
     if posts_collection.count_documents({}) > 0:
