@@ -122,13 +122,22 @@ def set_post(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     if sudo_users.find_one({"user_id": user_id}):
         if len(context.args) > 0:
+            # Join the arguments to handle spaces properly
             post_content = ' '.join(context.args)
+
+            # Check if the message is a reply to another post
+            reply_to_post = update.message.reply_to_message
+            if reply_to_post:
+                reply_post_id = reply_to_post.message_id
+                reply_text = reply_to_post.text
+                post_content = f"Reply to Post {reply_post_id}: {reply_text}\n\n{post_content}"
+
+            # Save post content to database
             posts_collection.update_one({}, {"$set": {"content": post_content}}, upsert=True)
             update.message.reply_text("Post has been set!")
         else:
             update.message.reply_text("Usage: /post <content>")
-    else:
-        update.message.reply_text("You are not authorized to use this command.")
+
 
 def set_autopost(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
