@@ -7,6 +7,7 @@ from telegram.ext import ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import logging
+import re
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -112,19 +113,26 @@ def start(update: Update, context: CallbackContext):
         random_video = random.choice(START_VIDEO)
         context.bot.send_video(chat_id=user_id, video=random_video, caption="Enjoy this random video!")
 
-def handle_message(update: Update, context: CallbackContext):
-    if posts_collection.count_documents({}) > 0:
-        post = posts_collection.find_one()
-        update.message.reply_text(post['content'])
-    else:
-        update.message.reply_text("No post is set yet!")
 
+# Function to detect and convert various formats to HTML
+def format_to_html(content):
+    # Convert bold (both *bold* and _bold_)
+    content = re.sub(r'(\*|_)(.*?)\1', r'<b>\2</b>', content)
+    
+    # Convert italic (both *italic* and _italic_)
+    content = re.sub(r'(\*|_)(.*?)\1', r'<i>\2</i>', content)
+    
+    # Convert code blocks
+    content = re.sub(r'`(.*?)`', r'<code>\1</code>', content)
+    
+    # Convert blockquote (quote wrapped in “ ”)
+    content = re.sub(r'“(.*?)”', r'<blockquote>\1</blockquote>', content)
+    
+    return content
 
-async def set_post(update, context: CallbackContext):
+def set_post(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
-    # Ensure user is authorized
     if sudo_users.find_one({"user_id": user_id}):
-        # Check if there are arguments provided
         if len(context.args) > 0:
             # Join the arguments to handle spaces properly
             post_content = ' '.join(context.args)
@@ -134,20 +142,27 @@ async def set_post(update, context: CallbackContext):
             if reply_to_post:
                 reply_post_id = reply_to_post.message_id
                 reply_text = reply_to_post.text
-                # Include the reply content in the post
                 post_content = f"Reply to Post {reply_post_id}: {reply_text}\n\n{post_content}"
 
-            # Save post content to the database
-            posts_collection.update_one({}, {"$set": {"content": post_content}}, upsert=True)
+            # Format content to HTML
+            post_content = format_to_html(post_content)
 
-            # Send confirmation message
-            await update.message.reply_text("Post has been set!")
+            # Save post content to database
+            posts_collection.update_one(
+                {"_id": ObjectId("some_id")},  # Replace with appropriate logic to fetch the post by ID
+                {"$set": {"content": post_content}},
+                upsert=True
+            )
+            update.message.reply_text("Post has been set!")
         else:
-            await update.message.reply_text("Usage: /post <content>")
-    else:
-        # User is not authorized, no reply message
-        pass
+            update.message.reply_text("Usage: /post <content>")
 
+def handle_message(update: Update, context: CallbackContext):
+    if posts_collection.count_documents({}) > 0:
+        post = posts_collection.find_one()
+        update.message.reply_text(post['content'])
+    else:
+        update.message.reply_text("No post is set yet!")
 
 
 def set_autopost(update: Update, context: CallbackContext):
