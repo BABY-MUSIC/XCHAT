@@ -165,6 +165,21 @@ def handle_message(update: Update, context: CallbackContext):
     else:
         update.message.reply_text("No post is set yet!")
 
+def clear_posts(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    # Check if the user is a sudo user
+    if sudo_users.find_one({"user_id": user_id}):
+        try:
+            # Delete all documents in the posts collection
+            result = posts_collection.delete_many({})
+            if result.deleted_count > 0:
+                update.message.reply_text(f"Successfully deleted {result.deleted_count} posts.")
+            else:
+                update.message.reply_text("No posts to delete.")
+        except Exception as e:
+            update.message.reply_text(f"Error while deleting posts: {e}")
+            print(f"Error while deleting posts: {e}")  # Logs the error for debugging
 
 def set_autopost(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
@@ -226,6 +241,7 @@ def main():
     dispatcher.add_handler(CommandHandler("autopost", set_autopost, pass_args=True))
     dispatcher.add_handler(CommandHandler("addsudo", add_sudo, pass_args=True))
     dispatcher.add_handler(CommandHandler("rm", remove_sudo, pass_args=True))
+    dispatcher.add_handler(CommandHandler("clear", clear_posts, pass_args=True))
 
     # Message Handler
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
