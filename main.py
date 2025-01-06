@@ -3,6 +3,7 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from pymongo import MongoClient
 import datetime
+from telegram.ext import ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import logging
@@ -118,8 +119,9 @@ def handle_message(update: Update, context: CallbackContext):
     else:
         update.message.reply_text("No post is set yet!")
 
-def set_post(update: Update, context: CallbackContext):
+async def set_post(update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
+    # Ensure user is authorized
     if sudo_users.find_one({"user_id": user_id}):
         # Check if there are arguments provided
         if len(context.args) > 0:
@@ -134,15 +136,16 @@ def set_post(update: Update, context: CallbackContext):
                 # Include the reply content in the post
                 post_content = f"Reply to Post {reply_post_id}: {reply_text}\n\n{post_content}"
 
-            # Save post content to database
+            # Save post content to the database
             posts_collection.update_one({}, {"$set": {"content": post_content}}, upsert=True)
-            update.message.reply_text("Post has been set!")
-        else:
-            update.message.reply_text("Usage: /post <content>")
-    else:
-        # Removed unauthorized message as per your previous request
-        pass
 
+            # Send confirmation message
+            await update.message.reply_text("Post has been set!")
+        else:
+            await update.message.reply_text("Usage: /post <content>")
+    else:
+        # User is not authorized, no reply message
+        pass
 
 
 def set_autopost(update: Update, context: CallbackContext):
