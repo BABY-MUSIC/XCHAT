@@ -177,8 +177,8 @@ def main():
     updater = Updater("7880735724:AAFrwbMyRP-L7rDqTQxca61H_NyFwxNZ5f8", use_context=True)
     dispatcher = updater.dispatcher
 
-    # Set the timezone to IST (Indian Standard Time)
-    ist = timezone("Asia/Kolkata")
+    # Set the timezone to IST (Indian Standard Time) using pytz
+    ist = pytz.timezone("Asia/Kolkata")
 
     # Initialize scheduler with IST timezone
     scheduler = BackgroundScheduler(timezone=ist)  # Use pytz timezone
