@@ -84,10 +84,6 @@ START_VIDEO = [
         "https://telegra.ph/file/843109296a90b8a6c5f68.jpg"
 ]
 
-ist = timezone("Asia/Kolkata")
-# Scheduler
-scheduler = BackgroundScheduler(timezone=ist)
-scheduler.start()
 # Function to send autopost to all users
 def send_autopost(context: CallbackContext):
     autopost = autopost_collection.find_one()
@@ -175,13 +171,20 @@ def remove_sudo(update: Update, context: CallbackContext):
     else:
         update.message.reply_text("You are not authorized to use this command.")
 
+
 def main():
     # Replace 'YOUR_BOT_TOKEN' with your Telegram bot token
     updater = Updater("7880735724:AAFrwbMyRP-L7rDqTQxca61H_NyFwxNZ5f8", use_context=True)
     dispatcher = updater.dispatcher
 
+    # Set the timezone to IST (Indian Standard Time)
+    ist = timezone("Asia/Kolkata")
+
     # Add autopost job to scheduler
+    scheduler = BackgroundScheduler(timezone=ist)  # Use pytz timezone
     scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), args=[updater.bot])
+    scheduler.start()
+
     # Command Handlers
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("post", set_post, pass_args=True))
@@ -198,4 +201,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
     
