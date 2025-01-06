@@ -121,6 +121,7 @@ def handle_message(update: Update, context: CallbackContext):
 def set_post(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     if sudo_users.find_one({"user_id": user_id}):
+        # Check if there are arguments provided
         if len(context.args) > 0:
             # Join the arguments to handle spaces properly
             post_content = ' '.join(context.args)
@@ -130,6 +131,7 @@ def set_post(update: Update, context: CallbackContext):
             if reply_to_post:
                 reply_post_id = reply_to_post.message_id
                 reply_text = reply_to_post.text
+                # Include the reply content in the post
                 post_content = f"Reply to Post {reply_post_id}: {reply_text}\n\n{post_content}"
 
             # Save post content to database
@@ -137,6 +139,10 @@ def set_post(update: Update, context: CallbackContext):
             update.message.reply_text("Post has been set!")
         else:
             update.message.reply_text("Usage: /post <content>")
+    else:
+        # Removed unauthorized message as per your previous request
+        pass
+
 
 
 def set_autopost(update: Update, context: CallbackContext):
