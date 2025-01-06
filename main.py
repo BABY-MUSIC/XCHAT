@@ -112,7 +112,7 @@ def start(update: Update, context: CallbackContext):
     # Send a random video from START_VIDEO
     if START_VIDEO:
         random_video = random.choice(START_VIDEO)
-        context.bot.send_video(chat_id=user_id, video=random_video, caption="Enjoy this random video!")
+        context.bot.send_video(chat_id=user_id, video=random_video, caption="@girl_sexrbot || @desibhabhi_xbot")
 
 
 # Function to detect and convert various formats to HTML
@@ -209,32 +209,54 @@ def remove_sudo(update: Update, context: CallbackContext):
     else:
         update.message.reply_text("You are not authorized to use this command.")
 
+bot_token_1 = "7880735724:AAFrwbMyRP-L7rDqTQxca61H_NyFwxNZ5f8"
+bot_token_2 = "7880977022:AAEYA-wPgHx8G4FbIPoDU-OiK8pwv8dttsg"
 
 def main():
-    # Replace 'YOUR_BOT_TOKEN' with your Telegram bot token
-    updater = Updater("7880735724:AAFrwbMyRP-L7rDqTQxca61H_NyFwxNZ5f8", use_context=True)
-    dispatcher = updater.dispatcher
+    # Bot 1 setup
+    updater_1 = Updater(bot_token_1, use_context=True)
+    dispatcher_1 = updater_1.dispatcher
+
+    # Bot 2 setup
+    updater_2 = Updater(bot_token_2, use_context=True)
+    dispatcher_2 = updater_2.dispatcher
 
     # Initialize the scheduler (UTC)
     scheduler = BackgroundScheduler(timezone='UTC')
     next_run_time = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
-    scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), next_run_time=next_run_time, args=[updater.bot])
+    scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), next_run_time=next_run_time, args=[updater_1.bot])
     scheduler.start()
 
-    # Command Handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("post", set_post, pass_args=True))
-    dispatcher.add_handler(CommandHandler("autopost", set_autopost, pass_args=True))
-    dispatcher.add_handler(CommandHandler("addsudo", add_sudo, pass_args=True))
-    dispatcher.add_handler(CommandHandler("rm", remove_sudo, pass_args=True))
-    dispatcher.add_handler(CommandHandler("clear", clear_posts, pass_args=True))
+    # Command Handlers for Bot 1
+    dispatcher_1.add_handler(CommandHandler("start", start))
+    dispatcher_1.add_handler(CommandHandler("post", set_post, pass_args=True))
+    dispatcher_1.add_handler(CommandHandler("autopost", set_autopost, pass_args=True))
+    dispatcher_1.add_handler(CommandHandler("addsudo", add_sudo, pass_args=True))
+    dispatcher_1.add_handler(CommandHandler("rm", remove_sudo, pass_args=True))
+    dispatcher_1.add_handler(CommandHandler("clear", clear_posts, pass_args=True))
+    
+    # Message Handler for Bot 1
+    dispatcher_1.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    # Message Handler
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    # Command Handlers for Bot 2
+    dispatcher_2.add_handler(CommandHandler("start", start))
+    dispatcher_2.add_handler(CommandHandler("post", set_post, pass_args=True))
+    dispatcher_2.add_handler(CommandHandler("autopost", set_autopost, pass_args=True))
+    dispatcher_2.add_handler(CommandHandler("addsudo", add_sudo, pass_args=True))
+    dispatcher_2.add_handler(CommandHandler("rm", remove_sudo, pass_args=True))
+    dispatcher_2.add_handler(CommandHandler("clear", clear_posts, pass_args=True))
+    
+    # Message Handler for Bot 2
+    dispatcher_2.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    # Start the bot
-    updater.start_polling()
-    updater.idle()
+    # Start both bots
+    updater_1.start_polling()
+    updater_2.start_polling()
+
+    # Idle for both bots
+    updater_1.idle()
+    updater_2.idle()
 
 if __name__ == "__main__":
     main()
+
