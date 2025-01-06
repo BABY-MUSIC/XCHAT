@@ -119,7 +119,8 @@ def handle_message(update: Update, context: CallbackContext):
     else:
         update.message.reply_text("No post is set yet!")
 
-async def set_post(update, context: ContextTypes.DEFAULT_TYPE):
+
+async def set_post(update, context: CallbackContext):
     user_id = update.message.from_user.id
     # Ensure user is authorized
     if sudo_users.find_one({"user_id": user_id}):
@@ -146,6 +147,7 @@ async def set_post(update, context: ContextTypes.DEFAULT_TYPE):
     else:
         # User is not authorized, no reply message
         pass
+
 
 
 def set_autopost(update: Update, context: CallbackContext):
