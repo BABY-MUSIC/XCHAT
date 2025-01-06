@@ -4,6 +4,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from pymongo import MongoClient
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from pytz import utc  # Add this import for timezone support
 import logging
 
 # Enable logging
@@ -85,7 +86,7 @@ START_VIDEO = [
 
 
 # Scheduler
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone=utc)  # Explicitly set the timezone to UTC
 scheduler.start()
 
 # Function to send autopost to all users
@@ -182,7 +183,6 @@ def main():
 
     # Add autopost job to scheduler
     scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), args=[updater.bot])
-
     # Command Handlers
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("post", set_post, pass_args=True))
