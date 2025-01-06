@@ -84,9 +84,9 @@ START_VIDEO = [
         "https://telegra.ph/file/843109296a90b8a6c5f68.jpg"
 ]
 
-
+ist = timezone("Asia/Kolkata")
 # Scheduler
-scheduler = BackgroundScheduler(timezone=timezone("UTC"))
+scheduler = BackgroundScheduler(timezone=ist)
 scheduler.start()
 # Function to send autopost to all users
 def send_autopost(context: CallbackContext):
