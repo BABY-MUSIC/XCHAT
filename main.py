@@ -180,7 +180,7 @@ def main():
     # Set the timezone to IST (Indian Standard Time)
     ist = timezone("Asia/Kolkata")
 
-    # Add autopost job to scheduler
+    # Initialize scheduler with IST timezone
     scheduler = BackgroundScheduler(timezone=ist)  # Use pytz timezone
     scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), args=[updater.bot])
     scheduler.start()
@@ -201,5 +201,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    
