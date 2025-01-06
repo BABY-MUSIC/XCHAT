@@ -3,7 +3,6 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from pymongo import MongoClient
 import datetime
-from telegram import ParseMode
 from bson import ObjectId
 from telegram.ext import ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -118,21 +117,6 @@ def start(update: Update, context: CallbackContext):
 
 # Function to detect and convert various formats to HTML
 
-def format_to_html(content):
-    # Convert bold (both *bold* and _bold_)
-    content = re.sub(r'(\*|_)(.*?)\1', r'<b>\2</b>', content)
-    
-    # Convert italic (both *italic* and _italic_)
-    content = re.sub(r'(\*|_)(.*?)\1', r'<i>\2</i>', content)
-    
-    # Convert code blocks
-    content = re.sub(r'`(.*?)`', r'<code>\1</code>', content)
-    
-    # Convert blockquote (quote wrapped in “ ”)
-    content = re.sub(r'“(.*?)”', r'<blockquote>\1</blockquote>', content)
-    
-    return content
-
 def set_post(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     if sudo_users.find_one({"user_id": user_id}):
@@ -147,11 +131,8 @@ def set_post(update: Update, context: CallbackContext):
                 reply_text = reply_to_post.text
                 post_content = f"Reply to Post {reply_post_id}: {reply_text}\n\n{post_content}"
 
-            # Format content to HTML
-            post_content = format_to_html(post_content)
-
             try:
-                # Save the new post content to the database
+                # Save the new post content to the database (without formatting)
                 posts_collection.insert_one({"content": post_content})
                 update.message.reply_text("Post has been set!")
             except Exception as e:
@@ -160,11 +141,12 @@ def set_post(update: Update, context: CallbackContext):
         else:
             update.message.reply_text("Usage: /post <content>")
 
+
 def handle_message(update: Update, context: CallbackContext):
     if posts_collection.count_documents({}) > 0:
         post = posts_collection.find_one()
-        # Send the post content with HTML formatting
-        update.message.reply_text(post['content'], parse_mode=ParseMode.HTML)
+        # Send the post content as plain text (no formatting)
+        update.message.reply_text(post['content'])
     else:
         update.message.reply_text("No post is set yet!")
 
