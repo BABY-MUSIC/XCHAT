@@ -2,10 +2,9 @@ import random
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from pymongo import MongoClient
+import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from pytz import timezone  # Add this import for timezone support
-import pytz
 import logging
 
 # Enable logging
@@ -178,12 +177,10 @@ def main():
     updater = Updater("7880735724:AAFrwbMyRP-L7rDqTQxca61H_NyFwxNZ5f8", use_context=True)
     dispatcher = updater.dispatcher
 
-    # Set the timezone to IST (Indian Standard Time) using pytz
-    ist = pytz.timezone("Asia/Kolkata")
-
-    # Initialize scheduler with IST timezone
-    scheduler = BackgroundScheduler(timezone=ist)  # Use pytz timezone
-    scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), args=[updater.bot])
+    # Initialize the scheduler (UTC)
+    scheduler = BackgroundScheduler(timezone='UTC')
+    next_run_time = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
+    scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), next_run_time=next_run_time, args=[updater.bot])
     scheduler.start()
 
     # Command Handlers
