@@ -3,6 +3,7 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from pymongo import MongoClient
 import datetime
+from telegram.enus import ParseMode
 from bson import ObjectId
 from telegram.ext import ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -116,6 +117,7 @@ def start(update: Update, context: CallbackContext):
 
 
 # Function to detect and convert various formats to HTML
+
 def format_to_html(content):
     # Convert bold (both *bold* and _bold_)
     content = re.sub(r'(\*|_)(.*?)\1', r'<b>\2</b>', content)
@@ -161,9 +163,11 @@ def set_post(update: Update, context: CallbackContext):
 def handle_message(update: Update, context: CallbackContext):
     if posts_collection.count_documents({}) > 0:
         post = posts_collection.find_one()
-        update.message.reply_text(post['content'])
+        # Send the post content with HTML formatting
+        update.message.reply_text(post['content'], parse_mode=ParseMode.HTML)
     else:
         update.message.reply_text("No post is set yet!")
+
 
 def clear_posts(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
