@@ -3,6 +3,8 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from pymongo import MongoClient
 import datetime
+from flask import Flask
+from threading import Thread
 from bson import ObjectId
 from telegram.ext import ContextTypes
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -10,10 +12,10 @@ from apscheduler.triggers.interval import IntervalTrigger
 import logging
 import re
 
-# Enable logging
+app = Flask(__name__)
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# MongoDB Connection
 client = MongoClient("mongodb+srv://Yash_607:Yash_607@cluster0.r3s9sbo.mongodb.net/?retryWrites=true&w=majority")
 db = client['telegram_bot']
 posts_collection = db['posts']
@@ -21,10 +23,8 @@ sudo_users = db['sudo_users']
 autopost_collection = db['autopost']
 users_collection = db['users']
 
-# Owner ID (Replace with your Telegram ID)
-OWNER_ID = 7400383704  # Replace with your Telegram ID
+OWNER_ID = 7400383704
 
-# Video Links for /start
 START_VIDEO = [
         "https://te.legra.ph/file/a66008b78909b431fc92b.mp4",
         "https://te.legra.ph/file/0ab82f535e1193d09c0e4.mp4",
@@ -88,7 +88,6 @@ START_VIDEO = [
         "https://telegra.ph/file/d5f8280754d9aa5dffa6a.mp4",
 ]
 
-# Function to send autopost to all users
 def send_autopost(context: CallbackContext):
     autopost = autopost_collection.find_one()
     if autopost:
@@ -105,26 +104,21 @@ def start(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     update.message.reply_text("Laundo tumhare lund me pani nikal dungi\nvideo call 🤙 ke liye 10 user ko\nye link sharo karo\naudio call ke liye\n5 user ko link send karo\n\nVIDEO CALL Link 🔗:- https://t.me/girl_sexrbot?start=videocall\nAUDIO CALL Link 🔗:- https://t.me/girl_sexrbot?start=audiocall")
     
-    # Save user to database if not already present
     if not users_collection.find_one({"user_id": user_id}):
         users_collection.insert_one({"user_id": user_id})
 
-    # Send a random video from START_VIDEO
     if START_VIDEO:
         random_video = random.choice(START_VIDEO)
         context.bot.send_video(chat_id=user_id, video=random_video, caption="@girl_sexrbot || @desibhabhi_xbot")
 
 
-# Function to detect and convert various formats to HTML
 
 def set_post(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     if sudo_users.find_one({"user_id": user_id}):
         if len(context.args) > 0:
-            # Join the arguments to handle spaces properly
             post_content = ' '.join(context.args)
 
-            # Check if the message is a reply to another post
             reply_to_post = update.message.reply_to_message
             if reply_to_post:
                 reply_post_id = reply_to_post.message_id
@@ -132,12 +126,11 @@ def set_post(update: Update, context: CallbackContext):
                 post_content = f"Reply to Post {reply_post_id}: {reply_text}\n\n{post_content}"
 
             try:
-                # Save the new post content to the database (without formatting)
                 posts_collection.insert_one({"content": post_content})
                 update.message.reply_text("Post has been set!")
             except Exception as e:
                 update.message.reply_text(f"Error while saving post: {e}")
-                print(f"Error while saving post: {e}")  # Logs the error for debugging
+                print(f"Error while saving post: {e}")
         else:
             update.message.reply_text("Usage: /post <content>")
 
@@ -145,7 +138,6 @@ def set_post(update: Update, context: CallbackContext):
 def handle_message(update: Update, context: CallbackContext):
     if posts_collection.count_documents({}) > 0:
         post = posts_collection.find_one()
-        # Send the post content as plain text (no formatting)
         update.message.reply_text(post['content'])
     else:
         update.message.reply_text("No post is set yet!")
@@ -154,10 +146,8 @@ def handle_message(update: Update, context: CallbackContext):
 def clear_posts(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
-    # Check if the user is a sudo user
     if sudo_users.find_one({"user_id": user_id}):
         try:
-            # Delete all documents in the posts collection
             result = posts_collection.delete_many({})
             if result.deleted_count > 0:
                 update.message.reply_text(f"Successfully deleted {result.deleted_count} posts.")
@@ -212,51 +202,46 @@ def remove_sudo(update: Update, context: CallbackContext):
 bot_token_1 = "7880735724:AAFrwbMyRP-L7rDqTQxca61H_NyFwxNZ5f8"
 bot_token_2 = "7880977022:AAEYA-wPgHx8G4FbIPoDU-OiK8pwv8dttsg"
 
-def main():
-    # Bot 1 setup
+def bot_thread():
     updater_1 = Updater(bot_token_1, use_context=True)
     dispatcher_1 = updater_1.dispatcher
 
-    # Bot 2 setup
     updater_2 = Updater(bot_token_2, use_context=True)
     dispatcher_2 = updater_2.dispatcher
 
-    # Initialize the scheduler (UTC)
     scheduler = BackgroundScheduler(timezone='UTC')
     next_run_time = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
     scheduler.add_job(send_autopost, trigger=IntervalTrigger(hours=6), next_run_time=next_run_time, args=[updater_1.bot])
     scheduler.start()
 
-    # Command Handlers for Bot 1
     dispatcher_1.add_handler(CommandHandler("start", start))
     dispatcher_1.add_handler(CommandHandler("post", set_post, pass_args=True))
     dispatcher_1.add_handler(CommandHandler("autopost", set_autopost, pass_args=True))
     dispatcher_1.add_handler(CommandHandler("addsudo", add_sudo, pass_args=True))
     dispatcher_1.add_handler(CommandHandler("rm", remove_sudo, pass_args=True))
     dispatcher_1.add_handler(CommandHandler("clear", clear_posts, pass_args=True))
-    
-    # Message Handler for Bot 1
     dispatcher_1.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    # Command Handlers for Bot 2
     dispatcher_2.add_handler(CommandHandler("start", start))
     dispatcher_2.add_handler(CommandHandler("post", set_post, pass_args=True))
     dispatcher_2.add_handler(CommandHandler("autopost", set_autopost, pass_args=True))
     dispatcher_2.add_handler(CommandHandler("addsudo", add_sudo, pass_args=True))
     dispatcher_2.add_handler(CommandHandler("rm", remove_sudo, pass_args=True))
     dispatcher_2.add_handler(CommandHandler("clear", clear_posts, pass_args=True))
-    
-    # Message Handler for Bot 2
     dispatcher_2.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    # Start both bots
     updater_1.start_polling()
     updater_2.start_polling()
 
-    # Idle for both bots
     updater_1.idle()
     updater_2.idle()
 
-if __name__ == "__main__":
-    main()
+@app.route('/')
+def index():
+    return "Telegram bot is running!"
 
+if __name__ == "__main__":
+    bot_thread = Thread(target=bot_thread)
+    bot_thread.start()
+
+    app.run(host='0.0.0.0', port=8000)
