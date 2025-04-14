@@ -111,6 +111,97 @@ async def on_new_group_join(client: Client, event: ChatMemberUpdated):
     except Exception as e:
         logger.error(f"Error in group join handler: {e}")
 
+
+from pyrogram import Client, filters
+from pyrogram.errors import FloodWait
+from pyrogram.types import Message
+import asyncio
+
+IS_BROADCASTING = False
+
+
+@RADHIKA.on_message(filters.command("broadcast") & filters.user(6657539971))  # Replace with your OWNER ID
+async def broadcast_handler(client: Client, message: Message):
+    global IS_BROADCASTING
+    if IS_BROADCASTING:
+        return await message.reply("⛔ Already Broadcasting!")
+
+    if message.reply_to_message:
+        x = message.reply_to_message.id
+        y = message.chat.id
+        query = None
+    else:
+        if len(message.command) < 2:
+            return await message.reply("🔸 Please provide a message or reply to one.")
+        query = message.text.split(None, 1)[1]
+        x = None
+        y = None
+
+    # Parse flags
+    flags = {
+        "pin": "-pin" in message.text,
+        "pinloud": "-pinloud" in message.text,
+        "user": "-user" in message.text,
+        "nobot": "-nobot" in message.text,
+    }
+
+    # Clean flags from query
+    for flag in ["-pin", "-pinloud", "-user", "-nobot"]:
+        if query:
+            query = query.replace(flag, "").strip()
+
+    await message.reply("✅ Broadcasting started...")
+    IS_BROADCASTING = True
+    total_sent = 0
+    total_pinned = 0
+
+    # Broadcast to groups
+    if not flags["nobot"]:
+        chats_cursor = word_db["Groups"].find({})
+        async for chat in chats_cursor:
+            try:
+                if x and y:
+                    msg = await client.forward_messages(chat["chat_id"], y, x)
+                else:
+                    msg = await client.send_message(chat["chat_id"], query)
+
+                if flags["pin"]:
+                    await msg.pin(disable_notification=True)
+                    total_pinned += 1
+                elif flags["pinloud"]:
+                    await msg.pin(disable_notification=False)
+                    total_pinned += 1
+
+                total_sent += 1
+                await asyncio.sleep(0.3)
+            except FloodWait as e:
+                await asyncio.sleep(e.value)
+            except:
+                continue
+
+    # Broadcast to users
+    if flags["user"]:
+        user_cursor = word_db["Users"].find({})
+        user_sent = 0
+        async for user in user_cursor:
+            try:
+                if x and y:
+                    await client.forward_messages(user["user_id"], y, x)
+                else:
+                    await client.send_message(user["user_id"], query)
+                user_sent += 1
+                await asyncio.sleep(0.3)
+            except FloodWait as e:
+                await asyncio.sleep(e.value)
+            except:
+                continue
+        await message.reply(f"✅ Sent to {user_sent} users.")
+
+    await message.reply(f"📢 Broadcast complete.\n✅ Groups: {total_sent}\n📌 Pinned: {total_pinned}")
+    IS_BROADCASTING = False
+
+
+
 # ⏬ Main run
 if __name__ == "__main__":
     try:
