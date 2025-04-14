@@ -22,7 +22,7 @@ API_HASH = "3030874d0befdb5d05597deacc3e83ab"
 BOT_TOKEN = "7344081617:AAFWVEyMRF2HSTEsPTuuJ7v0sHu0U2LEt6A"
 
 # Constants
-RADHIKA = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+RADHIKA = Client("my_bot_radhika", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 CHANNEL_ID = "RadhikaCommunity"
 MESSAGE_ID = 2357
 OWNER_ID = 6657539971
